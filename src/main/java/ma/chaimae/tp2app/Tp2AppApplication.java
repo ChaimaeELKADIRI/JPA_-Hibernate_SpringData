@@ -1,54 +1,64 @@
 package ma.chaimae.tp2app;
 
-import ma.chaimae.tp2app.entities.Product;
-import ma.chaimae.tp2app.repository.ProductRepository;
+import ma.chaimae.tp2app.entities.*;
+import ma.chaimae.tp2app.repository.*;
+import ma.chaimae.tp2app.service.IHospitalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 
+import java.util.Date;
 import java.util.List;
+import java.util.stream.Stream;
 
 @SpringBootApplication
-public class Tp2AppApplication implements CommandLineRunner{
-    @Autowired
-    private ProductRepository productRepository;
+public class Tp2AppApplication {
     public static void main(String[] args) {
 
         SpringApplication.run(Tp2AppApplication.class, args);
     }
 
-    @Override
-    public void run(String... args) throws Exception {
-        //productRepository.save(new Product(null,"Computer",4300,3));
-        //productRepository.save(new Product(null,"Printer",1200,4));
-        //productRepository.save(new Product(null,"Smart Phone",3200,32));
-        List<Product> products=productRepository.findAll();
-        products.forEach((p->{
-            System.out.println(p.toString());
-        }));
-        Product product=productRepository.findById(Long.valueOf(1)).get();
-        System.out.println("************");
-        System.out.println(product.getId());
-        System.out.println(product.getName());
-        System.out.println(product.getPrice());
-        System.out.println(product.getQuantity());
-        System.out.println("*************");
-        System.out.println("--------------");
-        List<Product> productList=productRepository.findByNameContains("C");
-        productList.forEach((p->{
-            System.out.println(p);
-        }));
-        System.out.println("--------------");
-        List<Product> productList2=productRepository.search("%C%");
-        productList2.forEach((p->{
-            System.out.println(p);
-        }));
-        System.out.println("--------------");
-        List<Product> productList3=productRepository.searchByPrice(3000);
-        productList3.forEach((p->{
-            System.out.println(p);
-        }));
+    @Bean
+    CommandLineRunner start(IHospitalService hospitalService,PatientRepository patientRepository,RendezVousRepository rendezVousRepository,ConsultationRepository consultationRepository,MedecinRepository medecinRepository) {
+        return args -> {
+            Stream.of("Salma","Yasser","Aya").
+                    forEach(name->{
+                        Patient patient=new Patient();
+                        patient.setNom(name);
+                        patient.setDateNaissance(new Date());
+                        patient.setMalade(false);
+                        hospitalService.savePatient(patient);
+                    });
+            Stream.of("Ayman","Rawane","Anas").
+                    forEach(name->{
+                        Medecin medecin=new Medecin();
+                        medecin.setNom(name+"@gmail.com");
+                        medecin.setSpeecialite(Math.random()>0.5?"Cardio":"Dentiste");
+                        hospitalService.saveMedecin(medecin);
+                    });
+
+            Patient patient=patientRepository.findById(1L).orElse(null);
+            Patient patient1=patientRepository.findByNom("Mohamed");
+
+            Medecin medecin=medecinRepository.findByNom("Rawane");
+
+            RendezVous rendezVous=new RendezVous();
+            rendezVous.setDate(new Date());
+            rendezVous.setStatus(StatusRDV.PENDING);
+            rendezVous.setMedecin(medecin);
+            rendezVous.setPatient(patient);
+            RendezVous saveDRDV=hospitalService.saveRDV(rendezVous);
+            System.out.println(saveDRDV.getId());
+
+            RendezVous rendezVous1=rendezVousRepository.findAll().get(0);
+            Consultation consultation=new Consultation();
+            consultation.setDateConsultation(new Date());
+            consultation.setRendezVous(rendezVous1);
+            consultation.setRapport("Rapport de la consultation ...");
+            hospitalService.saveConsultation(consultation);
+
+        };
     }
 }
