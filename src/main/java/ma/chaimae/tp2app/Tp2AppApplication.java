@@ -3,6 +3,7 @@ package ma.chaimae.tp2app;
 import ma.chaimae.tp2app.entities.*;
 import ma.chaimae.tp2app.repository.*;
 import ma.chaimae.tp2app.service.IHospitalService;
+import ma.chaimae.tp2app.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -21,7 +22,45 @@ public class Tp2AppApplication {
     }
 
     @Bean
-    CommandLineRunner start(IHospitalService hospitalService,PatientRepository patientRepository,RendezVousRepository rendezVousRepository,ConsultationRepository consultationRepository,MedecinRepository medecinRepository) {
+    CommandLineRunner start(UserService userService) {
+        return args -> {
+            User u = new User();
+            u.setUserName("user");
+            u.setPassword("123456");
+            userService.addNewUser(u);
+
+            User u2 = new User();
+            u2.setUserName("admin");
+            u2.setPassword("123456");
+            userService.addNewUser(u2);
+
+            Stream.of("STUDENT", "USER", "ADMIN").forEach(r -> {
+                Role role1 = new Role();
+                role1.setRoleName(r);
+                userService.addNewRole(role1);
+
+            });
+
+            userService.addRoleToUser("user", "STUDENT");
+            userService.addRoleToUser("user", "USER");
+            userService.addRoleToUser("admin", "USER");
+            userService.addRoleToUser("admin", "ADMIN");
+
+            try{
+                User user=userService.authentificate("user","123456");
+                System.out.println(user.getUserId());
+                System.out.println(user.getUserName());
+                System.out.println("Role ==> ");
+                user.getRoles().forEach(r->{
+                    System.out.println(r.toString());
+                });
+            }catch(Exception e){
+                e.printStackTrace();
+
+            }
+        };
+    }
+  /*  CommandLineRunner start(IHospitalService hospitalService,PatientRepository patientRepository,RendezVousRepository rendezVousRepository,ConsultationRepository consultationRepository,MedecinRepository medecinRepository) {
         return args -> {
             Stream.of("Salma","Yasser","Aya").
                     forEach(name->{
@@ -38,6 +77,7 @@ public class Tp2AppApplication {
                         medecin.setSpeecialite(Math.random()>0.5?"Cardio":"Dentiste");
                         hospitalService.saveMedecin(medecin);
                     });
+
 
             Patient patient=patientRepository.findById(1L).orElse(null);
             Patient patient1=patientRepository.findByNom("Mohamed");
@@ -60,5 +100,5 @@ public class Tp2AppApplication {
             hospitalService.saveConsultation(consultation);
 
         };
-    }
+    }*/
 }
